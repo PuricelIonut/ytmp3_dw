@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
+import time
 from pytube import YouTube, Playlist
 
 def download():
@@ -35,72 +36,92 @@ def download():
     update_console('✅ All Done', color='green')
 
 
-def is_playlist_url(url):
-    return 'playlist?list=' in url
-
-
 def download_song(video_url, output_dir):
     try:
         yt = YouTube(video_url)
-        if yt.author in yt.title:
-            valid_filename = yt.title
-        else:
-            valid_filename = yt.author + " - " + yt.title
-        file_path = os.path.join(output_dir, f'{valid_filename}.mp3')
+        tries = 0
+        success = False
+        
+        while tries < 5 and not success:
+            try:    
+                if yt.author in yt.title:
+                    valid_filename = yt.title
+                else:
+                    valid_filename = yt.author + " - " + yt.title
+                file_path = os.path.join(output_dir, f'{valid_filename}.mp3')
 
-        if os.path.exists(file_path):
-            update_console(f'⚠️ Skipped existing song: {valid_filename}.mp3', color='orange')
-            root.update()
-            return
+                if os.path.exists(file_path):
+                    update_console(f'⚠️ Skipped existing song: {valid_filename}.mp3', color='orange')
+                    root.update()
+                    return
 
-        audio_streams = yt.streams.filter(only_audio=True)
-        audio_streams = sorted(audio_streams, key=lambda s: s.abr, reverse=True)
+                audio_streams = yt.streams.filter(only_audio=True)
+                audio_streams = sorted(audio_streams, key=lambda s: s.abr, reverse=True)
 
-        if not audio_streams:
-            update_console('⚠️ No audio streams found for this video.', color='orange')
-            return
+                if not audio_streams:
+                    update_console('⚠️ No audio streams found for this video.', color='orange')
+                    return
 
-        audio_streams[0].download(output_path=output_dir, filename=valid_filename + '.mp3')
-        update_console(f'✅ Successfully downloaded: {valid_filename}.mp3', color='green')
-        root.update()
-
+                audio_streams[0].download(output_path=output_dir, filename=valid_filename + '.mp3')
+                update_console(f'✅ Successfully downloaded: {valid_filename}.mp3', color='green')
+                root.update()
+                success = True
+                
+            except Exception as e:
+                tries += 1
+                update_console(f'❌ Error occurred (Attempt {tries}/5): Failed to get YouTube object!', color='red')
+                time.sleep(1.5)
 
     except Exception as e:
         update_console(f'❌ Error occurred: {str(e)}', color='red')
-
-
+  
+    
 def download_playlist(playlist_url, output_dir):
     try:
         pl = Playlist(playlist_url)
         video_urls = pl.video_urls
 
         for i, video_url in enumerate(video_urls):
-            yt = YouTube(video_url)
-            if yt.author in yt.title:
-                valid_filename = yt.title
-            else:
-                valid_filename = yt.author + " - " + yt.title
-            file_path = os.path.join(output_dir, f'{valid_filename}.mp3')
+            tries = 0
+            success = False
 
-            if os.path.exists(file_path):
-                update_console(f'⚠️ Skipped existing song ({i+1}/{len(video_urls)}): {valid_filename}.mp3', color='orange')
-                root.update()
-                continue
+            while tries < 5 and not success:
+                try:
+                    yt = YouTube(video_url)
+                    if yt.author in yt.title:
+                        valid_filename = yt.title
+                    else:
+                        valid_filename = yt.author + " - " + yt.title
+                    file_path = os.path.join(output_dir, f'{valid_filename}.mp3')
 
-            audio_streams = yt.streams.filter(only_audio=True)
-            audio_streams = sorted(audio_streams, key=lambda s: s.abr, reverse=True)
+                    if os.path.exists(file_path):
+                        update_console(f'⚠️ Skipped existing song ({i+1}/{len(video_urls)}): {valid_filename}.mp3', color='orange')
+                        root.update()
+                        break  # Move to the next song if the file already exists
 
-            if not audio_streams:
-                update_console(f'⚠️ No audio streams found for the video: {valid_filename}', color='orange')
-                continue
+                    audio_streams = yt.streams.filter(only_audio=True)
+                    audio_streams = sorted(audio_streams, key=lambda s: s.abr, reverse=True)
 
-            audio_streams[0].download(output_path=output_dir, filename=valid_filename + '.mp3')
-            update_console(f'✅ Successfully downloaded ({i+1}/{len(video_urls)}): {valid_filename}.mp3', color='green')
-            root.update()
+                    if not audio_streams:
+                        update_console(f'⚠️ No audio streams found for the video: {valid_filename}', color='orange')
+                        break  # Move to the next song if no audio streams are found
+
+                    audio_streams[0].download(output_path=output_dir, filename=valid_filename + '.mp3')
+                    update_console(f'✅ Successfully downloaded ({i+1}/{len(video_urls)}): {valid_filename}.mp3', color='green')
+                    root.update()
+                    success = True
+
+                except Exception as e:
+                    tries += 1
+                    update_console(f'❌ Error occurred (Attempt {tries}/5): Failed to get YouTube object!', color='red')
+                    time.sleep(1.5)
 
     except Exception as e:
         update_console(f'❌ Error occurred: {str(e)}', color='red')
 
+
+def is_playlist_url(url):
+    return 'playlist?list=' in url
 
 def browse_output_directory():
     output_dir = filedialog.askdirectory()
@@ -121,7 +142,7 @@ def on_mode_changed(*args):
         if not is_playlist_url(url_entry.get()):
             url_entry.delete(0, tk.END)
 
-
+# Update console
 def update_console(message, color='black'):
     console_text.config(state=tk.NORMAL)
     console_text.insert(tk.END, message + '\n', color)
@@ -129,13 +150,23 @@ def update_console(message, color='black'):
     console_text.config(state=tk.DISABLED)
     console_text.see(tk.END)
 
-
+# Console clear
 def clear_console():
     console_text.config(state=tk.NORMAL)
     console_text.delete('1.0', tk.END)
     console_text.config(state=tk.DISABLED)
 
-
+# Resize text window
+def on_window_resize(event):
+    new_width = root.winfo_width() // 2  # Adjust the factor as needed
+    console_text.config(width=new_width)
+  
+# Stop download function   
+def stop_download():
+    update_console(f'⚠️ Download was stopped!', color='Blue')
+    root.quit()
+    root.mainloop()
+        
 root = tk.Tk()
 root.title('YouTube MP3 Downloader')
 
@@ -172,17 +203,12 @@ browse_button = tk.Button(root, text='Browse', command=browse_output_directory)
 browse_button.grid(row=7, column=1, padx=5, pady=5, sticky='w')
 
 # Console Text
-console_text = tk.Text(root, state=tk.DISABLED, width=60, height=10)
+console_text = tk.Text(root, state=tk.DISABLED, width=60, height=20)
 console_text.grid(row=8, column=0, columnspan=2, padx=10, pady=5)
 
 # Download Button
 download_button = tk.Button(root, text='Download', command=download, width=10)
 download_button.grid(row=9, column=0, columnspan=2, padx=10, pady=10)
-
-def stop_download():
-    root.mainloop()
-    update_console(f'⚠️ Download was stopped!', color='orange')
-    root.update()
 
 # Stop Button
 stop_button = tk.Button(root, text='Stop', command=stop_download, width=10)
@@ -190,7 +216,9 @@ stop_button.grid(row=10, column=0, columnspan=2, padx=10, pady=10,)
 
 # Adjust window size
 root.columnconfigure(0, weight=1)
-root.geometry('500x450')
+root.geometry('600x600')
+
+root.bind("<Configure>", on_window_resize)
 
 # Text tag configuration for colors
 console_text.tag_config('red', foreground='red')
