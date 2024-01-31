@@ -29,7 +29,7 @@ eg. :
   A much user friendly version of the script. I made a simple GUI using tkinter.
 
 ## Features:
-  Can easily pick between a song or a playlist, easy way to browse files to pick a path, download button and stop button. All the actions are displayed in a log window for the user to see the progress.
+  Can easily pick between a song or a playlist, easy way to browse files to pick a path, download button and stop button. All the actions are displayed in a log window for the user to see.
 
 ## URL Format
   The script determines whether the provided URL is for a song or a playlist. It checks for the presence of "playlist" and "list=" for playlists and "watch?v=" for songs.
@@ -38,7 +38,7 @@ eg. :
   For single songs, the script downloads the corresponding MP3 file and saves it in the specified output directory.
   For playlists, the script iterates through the playlist, downloads each song, and saves them in the output directory.
 
-##Note
+## Note
   - The script ensures that the filenames are valid by removing special characters from the YouTube video titles.
   - If a downloaded song already exists in the output directory, the script skips the download for that particular song.
   - The script stops gracefully on a keyboard interrupt.
