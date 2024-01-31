@@ -1,4 +1,8 @@
 # YouTube MP3 Downloader
+# Important!
+  I made this script to learn more about working with python, creating GUI and better understanding of command-line arguments.
+  Using this program to download and sharing the content can have consequences as it breaks YouTube copyright policies
+
 ## Overview
 
 Download either a single YouTube song or an entire playlist in MP3 format. It utilizes the `pytube` library to interact with YouTube and download the audio content.
